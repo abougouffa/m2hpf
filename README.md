@@ -14,7 +14,7 @@ Data Translation, Inc.
 Marlborough, MA 01752-1192, USA
 Telephone (508) 481-3700
 Home Page http://www.datatranslation.com/
-``
+```
 
 The `m2hpf` library implements a slightly modified version of the format described in the document,
 it has beed written to deal with [Delsys EMGworks](https://www.delsys.com) EMG sensors data.
