@@ -29,7 +29,11 @@ FROM LongMath IMPORT
 	round;
 
 
-(* HPFReadChannelInformation *)
+(*
+	HPFReadChannelInformation - Read the Channel information chunk
+	This chunk is an XML chunk which contains a description of the different
+	signals and their units, data representation... etc.
+*)
 PROCEDURE HPFReadChannelInformation(VAR hpfFile : HPF_FILE) : BOOLEAN;
 TYPE
 	PTR_STRING = POINTER TO ARRAY OF CHAR;
@@ -44,9 +48,9 @@ VAR
 	VAR
 		i, k : CARDINAL;
 		j : INTEGER;
-		tagLu : HPF_SET_CLAUSES_INFO;
-		valeurLue : ARRAY[0..255] OF CHAR;
-		trouve : BOOLEAN;
+		xmlTag : HPF_SET_CLAUSES_INFO;
+		readValue : ARRAY[0..255] OF CHAR;
+		found : BOOLEAN;
 		sos : CHAR;
 		res : ConvResults;
 
@@ -55,11 +59,11 @@ VAR
 		VAR
 			i, j : CARDINAL;
 			tag : HPF_SET_CLAUSES_INFO;
-			trouve : BOOLEAN;
+			found : BOOLEAN;
 		BEGIN
-			FindNext(str, tagsList, 0, trouve, i);
+			FindNext(str, tagsList, 0, found, i);
 
-			IF NOT trouve THEN
+			IF NOT found THEN
 				RETURN invalid_tag
 			END;
 
@@ -74,133 +78,86 @@ VAR
 			RETURN tag
 		END ReadXMLTag;
 
-		PROCEDURE ValeurXml(VAR dans : ARRAY OF CHAR);
+		PROCEDURE XmlValue(VAR dans : ARRAY OF CHAR);
 		BEGIN
-			FindNext("<", ptrXML^, 0, trouve, k);
+			FindNext("<", ptrXML^, 0, found, k);
 			ptrXML^[k] := 0C;
 			Assign(ptrXML^, dans);
 			ptrXML^[k] := '<';
-			ptrXML := ADR(ptrXML^[k]);
-		END ValeurXml;
+			ptrXML := ADR(ptrXML^[k])
+		END XmlValue;
 	BEGIN
 		j := -1;
 
 		LOOP
-			FindNext(">", ptrXML^, 0, trouve, i);
-			IF NOT trouve THEN EXIT END;
+			FindNext(">", ptrXML^, 0, found, i);
+			IF NOT found THEN EXIT END;
 			INC(i);
 			sos := ptrXML^[i];
 			ptrXML^[i] := 0C;
-			tagLu := ReadXMLTag(ptrXML^, ch_clauses_info);
+			xmlTag := ReadXMLTag(ptrXML^, ch_clauses_info);
 			ptrXML^[i] := sos;
 			ptrXML := ADR(ptrXML^[i]);
 
-			IF (tagLu = invalid_tag) AND (tagLu = channel_information_data) THEN
+			IF (xmlTag = invalid_tag) AND (xmlTag = channel_information_data) THEN
 				CONTINUE
-			ELSIF (tagLu = channel_information) THEN
+			ELSIF (xmlTag = channel_information) THEN
 				INC(j);
 				CONTINUE
 			END;
 
-			ValeurXml(valeurLue);
+			XmlValue(readValue);
 
 			WITH informationChunks.channelData^[j] DO
-				CASE tagLu OF
-					ch_name :
-						Assign(valeurLue, name)
-
-				| internal_name :
-						Assign(valeurLue, internalName)
-
-				| ch_color :
-
-				| ch_unit :
-						CASE valeurLue[0] OF
+				CASE xmlTag OF
+					ch_name : Assign(readValue, name)
+				|	internal_name : Assign(readValue, internalName)
+				|	ch_color : (* NOTHING *)
+				|	ch_unit :
+						CASE readValue[0] OF
 							'V' : unit := volt
-						| 'g' : unit := g
-						| 'd' : unit := deg_per_seg
-						| 'u' : unit := u_tesla
+						|	'g' : unit := g
+						|	'd' : unit := deg_per_seg
+						|	'u' : unit := u_tesla
 						END;
-
-				| channel_type :
-						CASE valeurLue[0] OF
+				|	channel_type :
+						CASE readValue[0] OF
 							'R' : channelType := ch_random_data_channel
-						| 'C' : channelType := ch_calculated_time_channel
-						| 'M' : channelType := ch_monotonic_data_channel
+						|	'C' : channelType := ch_calculated_time_channel
+						|	'M' : channelType := ch_monotonic_data_channel
 						END;
-
-				| assigned_time_channel_index :
-						StrToInt(valeurLue, assignedTimeChannelIndex, res)
-
-				| data_type :
-						CASE valeurLue[0] OF
+				|	assigned_time_channel_index : StrToInt(readValue, assignedTimeChannelIndex, res)
+				|	data_type :
+						CASE readValue[0] OF
 							'F' : dataType := ch_float
-						| 'D' : dataType := ch_double
-						| 'I' :
-								IF valeurLue[3] = '1' THEN
+						|	'D' : dataType := ch_double
+						|	'I' :
+								IF readValue[3] = '1' THEN
 									dataType := ch_int16
 								ELSE
 									dataType := ch_int32
 								END
 						END
-
-				| data_index :
-						StrToInt(valeurLue, dataIndex, res)
-
-				| start_time :
-						Assign(valeurLue, startTime)
-
-				| time_increment :
-						timeIncrement := ValueReal(valeurLue)
-
-				| range_min :
-						rangeMin := ValueReal(valeurLue)
-
-				| range_max :
-						rangeMax := ValueReal(valeurLue)
-
-				| internal_gain :
-						internalGain := ValueReal(valeurLue)
-
-				| internal_offset :
-						internalOffset := ValueReal(valeurLue)
-
-				| external_gain :
-						externalGain := ValueReal(valeurLue)
-
-				| external_offset :
-						externalOffset := ValueReal(valeurLue)
-
-				| per_channel_sample_rate :
-						perChannelSampleRate := ValueReal(valeurLue)
-
-				| requested_per_channel_sample_rate :
-						requestedPerChannelSampleRate := ValueReal(valeurLue)
-
-				| per_channel_base_frequency_divider :
-						perChannelBaseFrequencyDivider := ValueReal(valeurLue)
-
-				| physical_channel_number :
-						StrToInt(valeurLue, physicalChannelNumber, res)
-
-				| system_channel_number :
-						StrToInt(valeurLue, systemChannelNumber, res)
-
-				| uses_sensor_values :
-						usesSensorValues := (valeurLue[0] = 'T')
-
-				| start_trigger :
-						Assign(valeurLue, startTrigger)
-
-				| stop_trigger :
-						Assign(valeurLue, stopTrigger)
-
-				| requested_number_of_samples :
-						StrToInt(valeurLue, requestedNumberOfSamples, res)
-
-				ELSE
-					(* invalid tag! *)
-				END (* CASE tagLu*)
+				|	data_index : StrToInt(readValue, dataIndex, res)
+				|	start_time : Assign(readValue, startTime)
+				|	time_increment : timeIncrement := ValueReal(readValue)
+				|	range_min : rangeMin := ValueReal(readValue)
+				|	range_max : rangeMax := ValueReal(readValue)
+				|	internal_gain : internalGain := ValueReal(readValue)
+				|	internal_offset : internalOffset := ValueReal(readValue)
+				|	external_gain : externalGain := ValueReal(readValue)
+				|	external_offset : externalOffset := ValueReal(readValue)
+				|	per_channel_sample_rate : perChannelSampleRate := ValueReal(readValue)
+				|	requested_per_channel_sample_rate : requestedPerChannelSampleRate := ValueReal(readValue)
+				|	per_channel_base_frequency_divider : perChannelBaseFrequencyDivider := ValueReal(readValue)
+				|	physical_channel_number : StrToInt(readValue, physicalChannelNumber, res)
+				|	system_channel_number : StrToInt(readValue, systemChannelNumber, res)
+				|	uses_sensor_values : usesSensorValues := (readValue[0] = 'T')
+				|	start_trigger : Assign(readValue, startTrigger)
+				|	stop_trigger : Assign(readValue, stopTrigger)
+				|	requested_number_of_samples : StrToInt(readValue, requestedNumberOfSamples, res)
+				ELSE (* invalid tag! *)
+				END (* CASE xmlTag *)
 			END (* WITH informationChunks.channelData^[j] "*)
 		END
 	END ReadXMLInfo;
@@ -224,8 +181,12 @@ BEGIN
 END HPFReadChannelInformation;
 
 
-(* HPFSeekToChunk *)
-PROCEDURE HPFSeekToChunk(CONST hpfFile : HPF_FILE; chunkId : HPF_SET_CHUNK_ID;
+(*
+	HPFSeekToChunk - Seek to the first chunk with an ID in the chunkIdSet set,
+	the function set the postion in the file and return the position in startingPos
+	Note: no need to manually set the file position after calling this function
+*)
+PROCEDURE HPFSeekToChunk(CONST hpfFile : HPF_FILE; chunkIdSet : HPF_SET_CHUNK_ID;
 	VAR startingPos : FilePos) : BOOLEAN;
 VAR
 	chunkPos : FilePos;
@@ -233,10 +194,10 @@ VAR
 	lu : CARDINAL;
 	p : POINTER TO CARDINAL;
 BEGIN
-	(* Chunks are alligned to 64kiB, each chunk position should be a multiple of 64k (10000h) *)
+	(* Chunks are aligned to 64kiB, each chunk position should be a multiple of 64k (10000h) *)
 	p := ADR(startingPos);
 	IF (p^ MOD 10000h) # 0 THEN
-		p^ := p^ + (10000h - (p^ MOD 10000h));
+		p^ := p^ + (10000h - (p^ MOD 10000h)); (* align to 64kiB *)
 	END;
 
 	SetPos(hpfFile.chanId, startingPos);
@@ -249,7 +210,7 @@ BEGIN
 			EXIT
 		END;
 
-		IF readChunk.chunkId IN chunkId THEN
+		IF readChunk.chunkId IN chunkIdSet THEN
 			SetPos(hpfFile.chanId, chunkPos);
 			startingPos := chunkPos;
 			RETURN TRUE
@@ -263,7 +224,9 @@ BEGIN
 END HPFSeekToChunk;
 
 
-(* HPFReadIndex *)
+(*
+	HPFReadIndex - Read the index chunk if any
+*)
 PROCEDURE HPFReadIndex(VAR hpfFile : HPF_FILE) : BOOLEAN;
 VAR
 	chunkPos : FilePos;
@@ -271,22 +234,30 @@ VAR
 BEGIN
 	chunkPos := StartPos(hpfFile.chanId);
 
+	(* Find the index chunk and return the starting position in chunkPos file position, return if no index chunk *)
 	IF NOT HPFSeekToChunk(hpfFile, HPF_SET_CHUNK_ID{ch_index}, chunkPos) THEN
 		RETURN FALSE
 	END;
 
+	(* Read the index chunk *)
 	RawRead(hpfFile.chanId, ADR(hpfFile.index), 24, lu);
 
+	(* Allocate and read the events list *)
 	NEW(hpfFile.index.event, hpfFile.index.indexCount - 1);
-
 	RawRead(hpfFile.chanId, hpfFile.index.event, hpfFile.index.indexCount * 40, lu);
+
+	(* Move the position to the beginning of the next chunk *)
 	SetPos(hpfFile.chanId, NewPos(hpfFile.chanId, 1, hpfFile.index.chunkSize, chunkPos));
 
 	RETURN TRUE
 END HPFReadIndex;
 
 
-(* HPFBuildIndex *)
+(*
+	HPFBuildIndex - Build an in-memory index chunk if the file is not indexed
+	Note: we don't write the built index to the file!, we built it in-memory to be
+	used later.
+*)
 PROCEDURE HPFBuildIndex(VAR hpfFile : HPF_FILE) : BOOLEAN;
 VAR
 	chunkPos : FilePos;
@@ -334,7 +305,9 @@ BEGIN
 END HPFBuildIndex;
 
 
-(* HPFOpenFile *)
+(*
+	HPFOpenFile - Open an HPF file, the file handler will be stored in hpfFile.chanId
+*)
 PROCEDURE HPFOpenFile(CONST fileName : ARRAY OF CHAR; VAR hpfFile : HPF_FILE) : BOOLEAN;
 VAR
 	res : OpenResults;
@@ -353,7 +326,9 @@ BEGIN
 END HPFOpenFile;
 
 
-(* HPFOpenFile *)
+(*
+	HPFOpenAndInit - Open and initialise the hpfFile, 
+*)
 PROCEDURE HPFOpenAndInit(CONST fileName : ARRAY OF CHAR; VAR hpfFile : HPF_FILE) : BOOLEAN;
 BEGIN
 	IF NOT HPFOpenFile(fileName, hpfFile) THEN
@@ -371,7 +346,9 @@ BEGIN
 END HPFOpenAndInit;
 
 
-(* HPFCloseFile *)
+(*
+	HPFCloseFile
+*)
 PROCEDURE HPFCloseFile(VAR hpfFile : HPF_FILE);
 BEGIN
 	Close(hpfFile.chanId);
@@ -381,7 +358,16 @@ BEGIN
 END HPFCloseFile;
 
 
-(* HPFReadAtTime *)
+(*
+	HPFReadAtTime - Read data at a given time (in seconds), notice that the time starts
+	always at zero (0), for each file we starts at zero.
+	If you want to know the starting time of the experiment, you can get this information
+	from the hpfFile.channelInformation chunk.
+
+	Notice: the data is read on demande, so we aren't reading the whole file to memory,
+	in each time you call this function, it will calculate the location of closest data
+	sample to the given time, then it reads that information
+*)
 PROCEDURE HPFReadAtTime(hpfFile : HPF_FILE; time : LONGREAL;
 	CONST sensors : HPF_ARR_CHANNEL_SENSORS) : HPF_ARR_VALUES;
 VAR
@@ -435,7 +421,9 @@ BEGIN
 END HPFReadAtTime;
 
 
-(* HPFReadData *)
+(*
+	HPFReadData - Read the data chunk
+*)
 PROCEDURE HPFReadData(hpfFile : HPF_FILE; startingPos : FilePos; VAR outChunk : HPF_CHUNK) : BOOLEAN;
 VAR
 	useless : CARDINAL;
