@@ -3,7 +3,7 @@
 
 The current version support **only reading** from *.hpf files. So this library can't be used to write files in HPF format.
 
-This is a library to deal with Delsys EMGworks *.hpf files, the HPF file format specs are described in a document found [some where on internet](https://forums.ni.com/ni/attachments/ni/170/813238/1/high_performance_file_format_spec%5B1%5D.pdf) titled:
+This is a library to deal with Delsys EMGworks *.hpf files, the HPF file format specs are described in a document found [some where on the internet](https://forums.ni.com/ni/attachments/ni/170/813238/1/high_performance_file_format_spec%5B1%5D.pdf) titled:
 ```
 DT High Performance File Format Specification
 by
