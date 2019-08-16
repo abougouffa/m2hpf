@@ -1,9 +1,9 @@
 # m2hpf
 ### *HPF - DT High Performance File Format* high speed decoding library (for Modula-2 programming language)
 
-The current version support **only reading** from *.hpf files. So this library can't be used to write files in HPF format.
+The current version of `m2hpf` supports **only reading** *.hpf files. So `m2hpf` can't be used to write files in HPF format.
 
-This is a library to deal with Delsys EMGworks *.hpf files, the HPF file format specs are described in a document found [some where on the internet](https://forums.ni.com/ni/attachments/ni/170/813238/1/high_performance_file_format_spec%5B1%5D.pdf) titled:
+This implementation is based on the DT HPF file format, which is described in a document I found [some where on the internet](https://forums.ni.com/ni/attachments/ni/170/813238/1/high_performance_file_format_spec%5B1%5D.pdf) titled:
 ```
 DT High Performance File Format Specification
 by
@@ -18,7 +18,7 @@ Home Page http://www.datatranslation.com/
 ```
 
 The `m2hpf` library implements a slightly modified version of the format described in the document above,
-it has beed written to deal with [Delsys EMGworks](https://www.delsys.com) EMG sensors signals.
+it has beed written to support the actual format of [Delsys EMGworks](https://www.delsys.com) signals.
 
 This library is made to provide quick data access, to be used in real-time signal processing project, so for example; using this library to implement a *HPF to CSV* file converter will be much more efficient than using the *Delsys File Utility*.
 
