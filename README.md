@@ -17,6 +17,8 @@ Home Page http://www.datatranslation.com/
 ```
 
 The `m2hpf` library implements a slightly modified version of the format described in the document above,
-it has beed written to deal with [Delsys EMGworks](https://www.delsys.com) EMG sensors data.
+it has beed written to deal with [Delsys EMGworks](https://www.delsys.com) EMG sensors signals.
 
-The library has been written in Modula2 programming language for an internal use.
+This library is made to provide quick data access, to be used in real-time signal processing project, so for example; using this library to implement a *HPF to CSV* file converter will be much more efficient than using the *Delsys File Utility*.
+
+The library has been written in Modula2 programming language for an internal use. Now it is published under LGPL-3.0.
