@@ -28,6 +28,8 @@ This library is made to provide quick data access, to be used in real-time signa
 
 The library has been written in Modula2 programming language for an internal use. Now it is published under LGPL-3.0.
 
+---
+
 **THIS LIBRARY IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.**
 
 IF YOU WANT USE THIS LIBRARY IN TOUR PROJECT, YOU MAY NEED TO READ THE [FILE FORMAT SPECS DOCUMENT](high_performance_file_format_spec.pdf), SPECIALLY THE STATEMENT ON PAGE 1:
