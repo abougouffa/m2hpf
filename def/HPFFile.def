@@ -107,7 +107,7 @@ TYPE
     *)
   );
 
-  CH_UNIT = (volt, g, deg_per_seg, u_tesla);
+  CH_UNIT = (volt, g, deg_per_seg, u_tesla, unknown);
 
   CHUNK_CHANNEL_INFORMATION =
     RECORD
@@ -262,11 +262,13 @@ PROCEDURE HPFReadChannelInformation(VAR hpfFile : HPF_FILE) : BOOLEAN;
 PROCEDURE HPFOpenFile(CONST fileName : ARRAY OF CHAR; VAR hpfFile : HPF_FILE) : BOOLEAN;
 *)
 
+PROCEDURE HPFBuildIndex(VAR hpfFile : HPF_FILE) : BOOLEAN;
+
 PROCEDURE HPFOpenAndInit(CONST fileName : ARRAY OF CHAR; VAR hpfFile : HPF_FILE) : BOOLEAN;
 
 PROCEDURE HPFCloseFile(VAR hpfFile : HPF_FILE);
 
-PROCEDURE HPFReadAtTime(hpfFile : HPF_FILE; time : LONGREAL;
+PROCEDURE HPFReadAtTime(VAR hpfFile : HPF_FILE; time : LONGREAL;
   CONST sensors : HPF_ARR_CHANNEL_SENSORS) : HPF_ARR_VALUES;
 
 END HPFFile.

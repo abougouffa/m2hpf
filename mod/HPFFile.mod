@@ -78,11 +78,11 @@ VAR
       RETURN tag
     END ReadXMLTag;
 
-    PROCEDURE XmlValue(VAR dans : ARRAY OF CHAR);
+    PROCEDURE XmlValue(VAR outString : ARRAY OF CHAR);
     BEGIN
       FindNext("<", ptrXML^, 0, found, k);
       ptrXML^[k] := 0C;
-      Assign(ptrXML^, dans);
+      Assign(ptrXML^, outString);
       ptrXML^[k] := '<';
       ptrXML := ADR(ptrXML^[k])
     END XmlValue;
@@ -119,12 +119,14 @@ VAR
             | 'g' : unit := g
             | 'd' : unit := deg_per_seg
             | 'u' : unit := u_tesla
+            ELSE unit := unknown
             END;
         | channel_type :
             CASE readValue[0] OF
               'R' : channelType := ch_random_data_channel
             | 'C' : channelType := ch_calculated_time_channel
             | 'M' : channelType := ch_monotonic_data_channel
+            ELSE (* Invalid channel type *)
             END;
         | assigned_time_channel_index : StrToInt(readValue, assignedTimeChannelIndex, res)
         | data_type :
@@ -133,6 +135,7 @@ VAR
             | 'D' : dataType := ch_double
             | 'I' : IF readValue[3] = '1' THEN dataType := ch_int16 ELSE dataType := ch_int32 END
             | 'U' : IF readValue[4] = '1' THEN dataType := ch_uint16 ELSE dataType := ch_uint32 END (* NOTE: There is no Uint32 in the spec *)
+            ELSE (* Invalid data type *)
             END
         | data_index : StrToInt(readValue, dataIndex, res)
         | start_time : Assign(readValue, startTime)
@@ -364,7 +367,7 @@ END HPFCloseFile;
   in each time you call this function, it will calculate the location of closest data
   sample to the given time, then it reads that information
 *)
-PROCEDURE HPFReadAtTime(hpfFile : HPF_FILE; time : LONGREAL;
+PROCEDURE HPFReadAtTime(VAR hpfFile : HPF_FILE; time : LONGREAL;
   CONST sensors : HPF_ARR_CHANNEL_SENSORS) : HPF_ARR_VALUES;
 VAR
   result : HPF_ARR_VALUES;
@@ -420,7 +423,7 @@ END HPFReadAtTime;
 (*
   HPFReadData - Read the data chunk
 *)
-PROCEDURE HPFReadData(hpfFile : HPF_FILE; startingPos : FilePos; VAR outChunk : HPF_CHUNK) : BOOLEAN;
+PROCEDURE HPFReadData(VAR hpfFile : HPF_FILE; VAR startingPos : FilePos; VAR outChunk : HPF_CHUNK) : BOOLEAN;
 VAR
   useless : CARDINAL;
 BEGIN
