@@ -1,258 +1,258 @@
 DEFINITION MODULE HPFFile;
 
 FROM RndFile IMPORT
-	FilePos, ChanId;
+  FilePos, ChanId;
 
 (*
-	HPF File decoding library,
-	Implementation based on "DT High Performance File Format Specification" document of Data Translation, Inc.
+  HPF File decoding library,
+  Implementation based on "DT High Performance File Format Specification" document of Data Translation, Inc.
 
-	https://forums.ni.com/ni/attachments/ni/170/813238/1/high_performance_file_format_spec%5B1%5D.pdf
+  https://forums.ni.com/ni/attachments/ni/170/813238/1/high_performance_file_format_spec%5B1%5D.pdf
 *)
 
 <*/PACK*>
 TYPE
-	HPF_SET_CLAUSES_INFO = (channel_information_data, channel_information, ch_name, internal_name, ch_unit, ch_color, channel_type,
-		assigned_time_channel_index, data_type, data_index, start_time, time_increment,
+  HPF_SET_CLAUSES_INFO = (channel_information_data, channel_information, ch_name, internal_name, ch_unit, ch_color, channel_type,
+    assigned_time_channel_index, data_type, data_index, start_time, time_increment,
     range_min, range_max,internal_gain, internal_offset, external_gain, external_offset,
-		per_channel_sample_rate, requested_per_channel_sample_rate, per_channel_base_frequency_divider,
-		physical_channel_number, system_channel_number, uses_sensor_values,
-		start_trigger, stop_trigger, requested_number_of_samples, invalid_tag);
+    per_channel_sample_rate, requested_per_channel_sample_rate, per_channel_base_frequency_divider,
+    physical_channel_number, system_channel_number, uses_sensor_values,
+    start_trigger, stop_trigger, requested_number_of_samples, invalid_tag);
 
-	HPF_CHANNEL = [0..15];
-	HPF_SENSOR = (emg, acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z);
+  HPF_CHANNEL = [0..15];
+  HPF_SENSOR = (emg, acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z);
 
-	HPF_SET_SENSORS = SET OF HPF_SENSOR;
-	HPF_SET_CHANNELS = SET OF HPF_CHANNEL;
+  HPF_SET_SENSORS = SET OF HPF_SENSOR;
+  HPF_SET_CHANNELS = SET OF HPF_CHANNEL;
 
-	HPF_ARR_CHANNEL_SENSORS = ARRAY HPF_CHANNEL OF HPF_SET_SENSORS;
+  HPF_ARR_CHANNEL_SENSORS = ARRAY HPF_CHANNEL OF HPF_SET_SENSORS;
 
-	HPF_ARR_VALUES = ARRAY HPF_CHANNEL, HPF_SENSOR OF LONGREAL;
+  HPF_ARR_VALUES = ARRAY HPF_CHANNEL, HPF_SENSOR OF LONGREAL;
 
-	CHANNEL_DESCRIPTOR =
-		RECORD
-			offset, (* The byte offset from the beginning of this chunk where the data of this channel starts. *)
-			length : INTEGER32 (* The byte length of the channel's data. *) ;
-		END;
+  CHANNEL_DESCRIPTOR =
+    RECORD
+      offset, (* The byte offset from the beginning of this chunk where the data of this channel starts. *)
+      length : INTEGER32 (* The byte length of the channel's data. *) ;
+    END;
 
-	ARRAY_OF_CHANNEL_DESCRIPTOR = POINTER TO ARRAY OF CHANNEL_DESCRIPTOR;
+  ARRAY_OF_CHANNEL_DESCRIPTOR = POINTER TO ARRAY OF CHANNEL_DESCRIPTOR;
 
-	TYPE_CHANNEL_DATA = (ch_int16, ch_uint16, ch_int32, ch_uint32, ch_float, ch_double);
+  TYPE_CHANNEL_DATA = (ch_int16, ch_uint16, ch_int32, ch_uint32, ch_float, ch_double);
 
-	CHANNEL_VALUES =
-		RECORD
-	  	CASE : TYPE_CHANNEL_DATA OF
-				ch_int16 :
-					int16Values : POINTER TO ARRAY OF INTEGER16
-			| ch_uint16 :
-					card16Values : POINTER TO ARRAY OF CARDINAL16
-			| ch_int32 :
-					int32Values : POINTER TO ARRAY OF INTEGER32
-			| ch_uint32 :
-					card32Values : POINTER TO ARRAY OF CARDINAL32
-			| ch_float :
-					floatValues : POINTER TO ARRAY OF REAL
-			| ch_double :
-					doubleValues : POINTER TO ARRAY OF LONGREAL
-			END
-		END;
+  CHANNEL_VALUES =
+    RECORD
+      CASE : TYPE_CHANNEL_DATA OF
+        ch_int16 :
+          int16Values : POINTER TO ARRAY OF INTEGER16
+      | ch_uint16 :
+          card16Values : POINTER TO ARRAY OF CARDINAL16
+      | ch_int32 :
+          int32Values : POINTER TO ARRAY OF INTEGER32
+      | ch_uint32 :
+          card32Values : POINTER TO ARRAY OF CARDINAL32
+      | ch_float :
+          floatValues : POINTER TO ARRAY OF REAL
+      | ch_double :
+          doubleValues : POINTER TO ARRAY OF LONGREAL
+      END
+    END;
 
-	CH_STRING = ARRAY [0..255] OF CHAR;
+  CH_STRING = ARRAY [0..255] OF CHAR;
 
-	CHUNK_ID = (
-		ch_header = 1000h,
-		ch_channel_information = 2000h,
-		ch_data = 3000h,
-		ch_event_definition = 4000h,
-		ch_event_data = 5000h,
-		ch_index = 6000h);
+  CHUNK_ID = (
+    ch_header = 1000h,
+    ch_channel_information = 2000h,
+    ch_data = 3000h,
+    ch_event_definition = 4000h,
+    ch_event_data = 5000h,
+    ch_index = 6000h);
 
-	HPF_SET_CHUNK_ID = SET OF CHUNK_ID;
+  HPF_SET_CHUNK_ID = SET OF CHUNK_ID;
 
-	CHUNK_INDEX =
-		RECORD
-			dataStartIndex,
-			perChannelDataLengthInSamples : INTEGER64;
-			chunkId: CHUNK_ID;
-			__pad0 : CARDINAL32;
-			groupId : INTEGER64;
-			fileOffset : FilePos;
-			__pad1 : CARDINAL32;
-		END;
+  CHUNK_INDEX =
+    RECORD
+      dataStartIndex,
+      perChannelDataLengthInSamples : INTEGER64;
+      chunkId: CHUNK_ID;
+      __pad0 : CARDINAL32;
+      groupId : INTEGER64;
+      fileOffset : FilePos;
+      __pad1 : CARDINAL32;
+    END;
 
-	ARRAY_OF_CHUNK_INDEX = POINTER TO ARRAY OF CHUNK_INDEX;
+  ARRAY_OF_CHUNK_INDEX = POINTER TO ARRAY OF CHUNK_INDEX;
 
-	TYPE_CHANNEL = (
-		ch_calculated_time_channel,
-		(*
-			The channel data is implicitly defined by startTime and timeIncrement. It is calculated on the
-			fly using these two fields. No additional data is stored in this file. The fields
-			assignedTimeChannelIndex, dataType, dataIndex, rangeMin, rangeMax, dataScale and
-			dataOffset are undefined for this channel type.
-		*)
+  TYPE_CHANNEL = (
+    ch_calculated_time_channel,
+    (*
+      The channel data is implicitly defined by startTime and timeIncrement. It is calculated on the
+      fly using these two fields. No additional data is stored in this file. The fields
+      assignedTimeChannelIndex, dataType, dataIndex, rangeMin, rangeMax, dataScale and
+      dataOffset are undefined for this channel type.
+    *)
 
-		ch_random_data_channel,
-		(*
-			The channel data is contained in data chunks. The data could have random values. The
-			startTime and timeIncrement fields are not defined for this channel type.
-		*)
+    ch_random_data_channel,
+    (*
+      The channel data is contained in data chunks. The data could have random values. The
+      startTime and timeIncrement fields are not defined for this channel type.
+    *)
 
-		ch_monotonic_data_channel
-		(*
-			The channel data is contained in data chunks. The data must have strictly monotonic
-			increasing values. This channel type could be used if -for some reason- a calculated time
-			channel is not sufficient. The advantage of this type over the random data channel type is that
-			binary searching can be used to find specific entries, and it is easier to determine if data is
-			within a clipping rectangle or not.
-		*)
-	);
+    ch_monotonic_data_channel
+    (*
+      The channel data is contained in data chunks. The data must have strictly monotonic
+      increasing values. This channel type could be used if -for some reason- a calculated time
+      channel is not sufficient. The advantage of this type over the random data channel type is that
+      binary searching can be used to find specific entries, and it is easier to determine if data is
+      within a clipping rectangle or not.
+    *)
+  );
 
-	CH_UNIT = (volt, g, deg_per_seg, u_tesla);
+  CH_UNIT = (volt, g, deg_per_seg, u_tesla);
 
   CHUNK_CHANNEL_INFORMATION =
-		RECORD
-			name : CH_STRING;
-			internalName : CH_STRING;
-			unit : CH_UNIT;
-			color : ARRAY [0..2] OF CARDINAL8; (* R,G,B *)
-			channelType : TYPE_CHANNEL; (* This tag specifies the type of the channel *)
-			assignedTimeChannelIndex : INTEGER;
-			(*
-				This field specifies which channel should be used as X-axis data for this channel. If the field
-				is set to -1, no X-axis data is assigned to this channel. This could mean that this channel is
-				used as X-axis data for other channels.
-				If this field contains a value greater than or equal to zero and less than the number of
-				<ChannelInformation> items, a channel containing X-axis data is assigned to this channel.
-				The assigned channel data is always taken from data with the same groupID.
-				Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
-			*)
+    RECORD
+      name : CH_STRING;
+      internalName : CH_STRING;
+      unit : CH_UNIT;
+      color : ARRAY [0..2] OF CARDINAL8; (* R,G,B *)
+      channelType : TYPE_CHANNEL; (* This tag specifies the type of the channel *)
+      assignedTimeChannelIndex : INTEGER;
+      (*
+        This field specifies which channel should be used as X-axis data for this channel. If the field
+        is set to -1, no X-axis data is assigned to this channel. This could mean that this channel is
+        used as X-axis data for other channels.
+        If this field contains a value greater than or equal to zero and less than the number of
+        <ChannelInformation> items, a channel containing X-axis data is assigned to this channel.
+        The assigned channel data is always taken from data with the same groupID.
+        Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
+      *)
 
-			dataType : TYPE_CHANNEL_DATA;
-			(*
-				This field specifies the data type for this channel.
-				Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
-			*)
+      dataType : TYPE_CHANNEL_DATA;
+      (*
+        This field specifies the data type for this channel.
+        Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
+      *)
 
-			dataIndex : INTEGER;
-			(*
-				This field specifies at which location the channel data could be found in the channel
-				descriptor table in the data chunk.
-				Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
-			*)
+      dataIndex : INTEGER;
+      (*
+        This field specifies at which location the channel data could be found in the channel
+        descriptor table in the data chunk.
+        Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
+      *)
 
-			startTime : CH_STRING;
-			(*
-				This field specifies the start time of a calculated time channel. Its format is yyyy/mm/dd
-				hh:nn:ss.xxx or 0. If this field is 0, the channel specifies time relative to the beginning of
-				recording.
-					yyyy - year encoded as 4 digits.
-					mm - month encoded as 2 digits.
-					dd - day encoded as 2 digits.
-					hh - hour encoded as 2 digits. Range 0-23.
-					nn - minute encoded as 2 digits.
-					ss - second encoded as 2 digits.
-					xxx - fractional part of a second encoded as up to 12 digits.
-				Note: This field is only defined for <ChannelType> == calculatedTimeChannel.
-			*)
+      startTime : CH_STRING;
+      (*
+        This field specifies the start time of a calculated time channel. Its format is yyyy/mm/dd
+        hh:nn:ss.xxx or 0. If this field is 0, the channel specifies time relative to the beginning of
+        recording.
+          yyyy - year encoded as 4 digits.
+          mm - month encoded as 2 digits.
+          dd - day encoded as 2 digits.
+          hh - hour encoded as 2 digits. Range 0-23.
+          nn - minute encoded as 2 digits.
+          ss - second encoded as 2 digits.
+          xxx - fractional part of a second encoded as up to 12 digits.
+        Note: This field is only defined for <ChannelType> == calculatedTimeChannel.
+      *)
 
-			timeIncrement : LONGREAL;
-			(*
-				This field specifies the time increment of a calculated time channel. The time increment is
-				given in seconds. 1.0 means one second.
-				Note: This field is only defined for <ChannelType> == calculatedTimeChannel.
-			*)
+      timeIncrement : LONGREAL;
+      (*
+        This field specifies the time increment of a calculated time channel. The time increment is
+        given in seconds. 1.0 means one second.
+        Note: This field is only defined for <ChannelType> == calculatedTimeChannel.
+      *)
 
-			rangeMin, rangeMax : LONGREAL;
-			(*
-				This field contains the minimum possible value of a data sample in the associated data chunk.
-				For example, data whose source is a 16-bit binary encoding A/D converter would have a
-				RangeMin = 0, and RangeMax = 65535.
-				Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
-			*)
+      rangeMin, rangeMax : LONGREAL;
+      (*
+        This field contains the minimum possible value of a data sample in the associated data chunk.
+        For example, data whose source is a 16-bit binary encoding A/D converter would have a
+        RangeMin = 0, and RangeMax = 65535.
+        Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
+      *)
 
-			internalGain, (* <DataScale> This field specifies the scaling of the data used to convert it to Volts. *)
-			internalOffset : LONGREAL (* <DataOffset> This field specifies the offset of the data. *);
-			(*
-				The raw data in the data chunk can be converted to Volts using the equation
-				dataValue = dataScale * rawdata + dataOffset.
-				Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
-			*)
+      internalGain, (* <DataScale> This field specifies the scaling of the data used to convert it to Volts. *)
+      internalOffset : LONGREAL (* <DataOffset> This field specifies the offset of the data. *);
+      (*
+        The raw data in the data chunk can be converted to Volts using the equation
+        dataValue = dataScale * rawdata + dataOffset.
+        Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
+      *)
 
-			externalGain, (* <SensorScale> This field specifies the sensor scaling of the data, used to convert it from voltage to its natural unit. *)
-			externalOffset : LONGREAL (* <SensorOffset> This field specifies the sensor offset of the data. *);
-			(*
-				The voltage data can be converted to its source unit (volts for example) using the equation
-				dataValue = dataScale * voltageData + dataOffset.
-				Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
-			*)
+      externalGain, (* <SensorScale> This field specifies the sensor scaling of the data, used to convert it from voltage to its natural unit. *)
+      externalOffset : LONGREAL (* <SensorOffset> This field specifies the sensor offset of the data. *);
+      (*
+        The voltage data can be converted to its source unit (volts for example) using the equation
+        dataValue = dataScale * voltageData + dataOffset.
+        Note: This field is not defined for <ChannelType> == calculatedTimeChannel.
+      *)
 
-			perChannelSampleRate, requestedPerChannelSampleRate : LONGREAL;
-			perChannelBaseFrequencyDivider : LONGREAL;
-			physicalChannelNumber, systemChannelNumber : INTEGER;
-			usesSensorValues : BOOLEAN;
-			startTrigger, stopTrigger : CH_STRING;
-			requestedNumberOfSamples : INTEGER;
-		END; (* CHUNK_CHANNEL_INFORMATION *)
+      perChannelSampleRate, requestedPerChannelSampleRate : LONGREAL;
+      perChannelBaseFrequencyDivider : LONGREAL;
+      physicalChannelNumber, systemChannelNumber : INTEGER;
+      usesSensorValues : BOOLEAN;
+      startTrigger, stopTrigger : CH_STRING;
+      requestedNumberOfSamples : INTEGER;
+    END; (* CHUNK_CHANNEL_INFORMATION *)
 
-	ARRAY_OF_CHUNK_CHANNEL_INFORMATION = POINTER TO ARRAY OF CHUNK_CHANNEL_INFORMATION;
+  ARRAY_OF_CHUNK_CHANNEL_INFORMATION = POINTER TO ARRAY OF CHUNK_CHANNEL_INFORMATION;
 
-	HPF_CHUNK =
-		RECORD
-			chunkId : CHUNK_ID;
-			__pad : CARDINAL32;
-			chunkSize : INTEGER64; (* 0x10000 = 64kB *)
-			CASE : CHUNK_ID OF (* 1000h, 2000h, 3000h *)
-				ch_header :
-					creatorId : ARRAY [0..3] OF CHAR; (* 'datx' *)
-					fileVersion : INTEGER64; (* 0x10001 *)
-					indexChunkOffset : INTEGER64;
+  HPF_CHUNK =
+    RECORD
+      chunkId : CHUNK_ID;
+      __pad : CARDINAL32;
+      chunkSize : INTEGER64; (* 0x10000 = 64kB *)
+      CASE : CHUNK_ID OF (* 1000h, 2000h, 3000h *)
+        ch_header :
+          creatorId : ARRAY [0..3] OF CHAR; (* 'datx' *)
+          fileVersion : INTEGER64; (* 0x10001 *)
+          indexChunkOffset : INTEGER64;
 
-			| ch_channel_information :
-					channelGroupId : INTEGER32;
-					(*
-						It is possible to have more than one channel information chunk in one file. This field
-						identifies the data chunks that belong to this channel information chunk. Additional channel
-						information chunks with different groupID fields will usually be used if different time
-						increments per channel are used.
-					*)
+      | ch_channel_information :
+          channelGroupId : INTEGER32;
+          (*
+            It is possible to have more than one channel information chunk in one file. This field
+            identifies the data chunks that belong to this channel information chunk. Additional channel
+            information chunks with different groupID fields will usually be used if different time
+            increments per channel are used.
+          *)
 
-					numberOfChannels : INTEGER32;
-					channelData : ARRAY_OF_CHUNK_CHANNEL_INFORMATION; (* to be read from XML values *)
-			| ch_data :
-					groupId : INTEGER32;
-					dataStartIndex : INTEGER64;
-					(*
-						For data chunks, this is the continued index of the first data entry in this chunk. For example,
-						if there were two data chunks in the file, each containing 1000 values per channel, the
-						dataStartIndex for the first data chunk would be 0, and the dataStartIndex for the second
-						would be 1000. This helps locate the correct data chunk without scanning through the whole file.
-					*)
+          numberOfChannels : INTEGER32;
+          channelData : ARRAY_OF_CHUNK_CHANNEL_INFORMATION; (* to be read from XML values *)
+      | ch_data :
+          groupId : INTEGER32;
+          dataStartIndex : INTEGER64;
+          (*
+            For data chunks, this is the continued index of the first data entry in this chunk. For example,
+            if there were two data chunks in the file, each containing 1000 values per channel, the
+            dataStartIndex for the first data chunk would be 0, and the dataStartIndex for the second
+            would be 1000. This helps locate the correct data chunk without scanning through the whole file.
+          *)
 
-					channelDataCount : INTEGER32; (* The number of channel descriptor entries. *)
-					channelDescriptor : ARRAY_OF_CHANNEL_DESCRIPTOR; (* Should be an array of size channelDataCount *)
+          channelDataCount : INTEGER32; (* The number of channel descriptor entries. *)
+          channelDescriptor : ARRAY_OF_CHANNEL_DESCRIPTOR; (* Should be an array of size channelDataCount *)
 
-			| ch_index :
-					indexCount : INTEGER64;
-					event : ARRAY_OF_CHUNK_INDEX;
-				ELSE
-			END;
-		END (* HPF_CHUNK *);
+      | ch_index :
+          indexCount : INTEGER64;
+          event : ARRAY_OF_CHUNK_INDEX;
+        ELSE
+      END;
+    END (* HPF_CHUNK *);
 
-	HPF_FILE =
-		RECORD
-			chanId : ChanId;
-			header, index, channelInformation, data : HPF_CHUNK;
-		END;
+  HPF_FILE =
+    RECORD
+      chanId : ChanId;
+      header, index, channelInformation, data : HPF_CHUNK;
+    END;
 
 CONST
 
-	ch_clauses_info =
-		"<ChannelInformationData>,<ChannelInformation>,<Name>,<InternalName>,<Unit>,<Color>,<ChannelType>," +
-		"<AssignedTimeChannelIndex>,<DataType>,<DataIndex>,<StartTime>,<TimeIncrement>," +
+  ch_clauses_info =
+    "<ChannelInformationData>,<ChannelInformation>,<Name>,<InternalName>,<Unit>,<Color>,<ChannelType>," +
+    "<AssignedTimeChannelIndex>,<DataType>,<DataIndex>,<StartTime>,<TimeIncrement>," +
     "<RangeMin>,<RangeMax>,<InternalGain>,<InternalOffset>,<ExternalGain>,<ExternalOffset>," +
-		"<PerChannelSampleRate>,<RequestedPerChannelSampleRate>,<PerChannelBaseFrequencyDivider>," +
-		"<PhysicalChannelNumber>,<SystemChannelNumber>,<UsesSensorValues>," +
-		"<StartTrigger>,<StopTrigger>,<RequestedNumberOfSamples>";
+    "<PerChannelSampleRate>,<RequestedPerChannelSampleRate>,<PerChannelBaseFrequencyDivider>," +
+    "<PhysicalChannelNumber>,<SystemChannelNumber>,<UsesSensorValues>," +
+    "<StartTrigger>,<StopTrigger>,<RequestedNumberOfSamples>";
 
 
 (*
@@ -267,6 +267,6 @@ PROCEDURE HPFOpenAndInit(CONST fileName : ARRAY OF CHAR; VAR hpfFile : HPF_FILE)
 PROCEDURE HPFCloseFile(VAR hpfFile : HPF_FILE);
 
 PROCEDURE HPFReadAtTime(hpfFile : HPF_FILE; time : LONGREAL;
-	CONST sensors : HPF_ARR_CHANNEL_SENSORS) : HPF_ARR_VALUES;
+  CONST sensors : HPF_ARR_CHANNEL_SENSORS) : HPF_ARR_VALUES;
 
 END HPFFile.
