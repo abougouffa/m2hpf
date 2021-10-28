@@ -31,10 +31,11 @@ The library has been written in Modula-2 programming language for an internal us
 ### Compiling `m2hpf`
 `m2hpf` has been tested on the **[ADW Modula-2](https://www.modula2.org/adwm2/)** compiler on a Win 32-bit target.
 
-The `m2hpf` is implemented using the Modula-2 ISO standard, except of the usage of the ADW Modula-2 specific compiler directive `<*/PACK*>` in `HPFFile.def`. 
+The `m2hpf` is implemented using the Modula-2 ISO standard, but uses some ADW Modula-2 language extensions and the specific compiler directive `<*/PACK*>` in `HPFFile.def`. 
 
-This implementation should work also with any ISO compliant compiler (including the **[GNU Modula-2](https://www.nongnu.org/gm2/homepage.html)**), you need to find an equivalent directive to `<*/PACK*>` for your compiler, and modify `HPFFile.def` to use it. For example, in GNU Modula-2, there is an equivalent [`<* bytealignment (x) *>` pragma](https://www.nongnu.org/gm2/12/packed.html), however, this is not implemented in this code, you will need to modify the `HPFFile.def` to use this. 
+For this implementation to work also with another ISO compliant compiler, you need to find an equivalent directive to `<*/PACK*>` for your compiler, and modify `HPFFile.def` and do some code modifications.
 
+For example, in **[GNU Modula-2](https://www.nongnu.org/gm2/homepage.html)**, there is an equivalent [`<* bytealignment (x) *>` pragma](https://www.nongnu.org/gm2/12/packed.html), however, you will need to modify the `HPFFile.def` to use this, and modify some ADW Modula-2 specific code (like in the hardcoded values in the [`CHUNK_ID`](https://github.com/abougouffa/m2hpf/blob/master/def/HPFFile.def#L62) enumeration).
 
 ---
 
