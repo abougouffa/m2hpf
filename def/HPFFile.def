@@ -4,12 +4,18 @@ FROM RndFile IMPORT
   FilePos, ChanId;
 
 (*
-  HPF File decoding library,
-  Implementation based on "DT High Performance File Format Specification" document of Data Translation, Inc.
-
+  HPF File decoding library -- type definitions.
+  Implementation based on "DT High Performance File Format Specification", by Data Translation, Inc.
   https://forums.ni.com/ni/attachments/ni/170/813238/1/high_performance_file_format_spec%5B1%5D.pdf
 *)
 
+(*
+  These types need to be packed, they are used to read data from the HDF file.
+  So, they need to have the same binary layout as the file format. The used
+  <*/PACK*> compiler directive is specific to ADW Modula-2. For other compilers,
+  this needs to be replaced (by the <* bytealignment(0) *> pragma for example in
+  the GNU Modula-2 compiler.)
+*)
 <*/PACK*>
 TYPE
   HPF_SET_CLAUSES_INFO = (channel_information_data, channel_information, ch_name, internal_name, ch_unit, ch_color, channel_type,
@@ -59,6 +65,11 @@ TYPE
 
   CH_STRING = ARRAY [0..255] OF CHAR;
 
+  (*
+    This set is not standard Modula-2 (a ADW Modula-2 extension). The hard-coded
+    values are not supported by all Modula-2 compilers. Needs to be modified to
+    work with other compilers.
+  *)
   CHUNK_ID = (
     ch_header = 1000h,
     ch_channel_information = 2000h,

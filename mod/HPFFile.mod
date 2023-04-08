@@ -30,9 +30,9 @@ FROM LongMath IMPORT
 
 
 (*
-  HPFReadChannelInformation - Read the Channel information chunk
-  This chunk is an XML chunk which contains a description of the different
-  signals and their units, data representation... etc.
+  HPFReadChannelInformation - Read the Channel information chunk. This chunk is
+  an XML chunk which contains a description of the different signals and their
+  units, data representation... etc.
 *)
 PROCEDURE HPFReadChannelInformation(VAR hpfFile : HPF_FILE) : BOOLEAN;
 TYPE
